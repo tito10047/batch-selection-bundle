@@ -3,7 +3,7 @@
 namespace Tito10047\BatchSelectionBundle\Loader;
 
 use Doctrine\Common\Collections\Collection;
-use Tito10047\BatchSelectionBundle\Service\IdentityResolverInterface;
+use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
 
 /**
  * Loader responsible for extracting identifiers from Doctrine Collection objects.
@@ -13,7 +13,7 @@ class DoctrineCollectionLoader implements IdentityLoaderInterface
 	private const DEFAULT_IDENTIFIER_PATH = 'id';
 
 	public function __construct(
-		private readonly IdentityResolverInterface $resolver
+		private readonly IdentifierNormalizerInterface $resolver
 	) { }
 
 

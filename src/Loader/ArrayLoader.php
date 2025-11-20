@@ -2,12 +2,13 @@
 
 namespace Tito10047\BatchSelectionBundle\Loader;
 
-use Tito10047\BatchSelectionBundle\Service\IdentityResolverInterface;
+
+use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
 
 class ArrayLoader implements IdentityLoaderInterface
 {
 	public function __construct(
-		private readonly IdentityResolverInterface $resolver
+		private readonly IdentifierNormalizerInterface $resolver
 	) { }
 
 	public function supports(mixed $source): bool
