@@ -24,7 +24,7 @@ class DoctrineQueryLoaderTest extends AssetMapperKernelTestCase {
 		$this->assertEquals(10, $queryLoader->getTotalCount($query));
 
 		$ids = array_map(fn(RecordInteger $record) => $record->getId(), $records);
-		$foundIds = $queryLoader->loadAllIdentifiers($query, "id");
+		$foundIds = $queryLoader->loadAllIdentifiers(null, $query, "id");
 
 		$this->assertEquals($ids, $foundIds);
 

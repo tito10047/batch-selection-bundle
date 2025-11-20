@@ -12,11 +12,6 @@ class DoctrineCollectionLoader implements IdentityLoaderInterface
 {
 	private const DEFAULT_IDENTIFIER_PATH = 'id';
 
-	public function __construct(
-		private readonly IdentifierNormalizerInterface $resolver
-	) { }
-
-
 	/**
 	 * @inheritDoc
 	 */
@@ -43,7 +38,7 @@ class DoctrineCollectionLoader implements IdentityLoaderInterface
 	 *
 	 * @inheritDoc
 	 */
-	public function loadAllIdentifiers(mixed $source, ?string $identifierPath): array
+	public function loadAllIdentifiers(?IdentifierNormalizerInterface $resolver, mixed $source, ?string $identifierPath): array
 	{
 		if (!$this->supports($source)) {
 			throw new \InvalidArgumentException('Source must be a Doctrine Collection.');
@@ -53,7 +48,7 @@ class DoctrineCollectionLoader implements IdentityLoaderInterface
 		$identifiers = [];
 
 		foreach ($source as $item) {
-			$identifiers[] = $this->resolver->normalize($item, $identifierPath);
+			$identifiers[] = $resolver->normalize($item, $identifierPath);
 		}
 
 		return $identifiers;

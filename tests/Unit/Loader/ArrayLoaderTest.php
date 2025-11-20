@@ -20,7 +20,7 @@ class ArrayLoaderTest extends TestCase
         $this->assertTrue($loader->supports($records));
         $this->assertSame(10, $loader->getTotalCount($records));
 
-        $foundIds = $loader->loadAllIdentifiers($records, "id");
+        $foundIds = $loader->loadAllIdentifiers($resolver, $records, "id");
 
         $this->assertEquals($records, $foundIds);
     }

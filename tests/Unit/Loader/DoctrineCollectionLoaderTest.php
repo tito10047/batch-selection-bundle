@@ -22,7 +22,7 @@ class DoctrineCollectionLoaderTest extends AssetMapperKernelTestCase
         $this->assertTrue($loader->supports($collection));
         $this->assertSame(10, $loader->getTotalCount($collection));
 
-        $foundIds = $loader->loadAllIdentifiers($collection, null);
+        $foundIds = $loader->loadAllIdentifiers($resolver, $collection, null);
 
         $this->assertEquals($records, $foundIds);
     }

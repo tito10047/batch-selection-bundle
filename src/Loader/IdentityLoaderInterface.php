@@ -2,9 +2,11 @@
 
 namespace Tito10047\BatchSelectionBundle\Loader;
 
+use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
+
 interface IdentityLoaderInterface {
 
-	public function loadAllIdentifiers(mixed $source, ?string $identifierPath): array;
+	public function loadAllIdentifiers(?IdentifierNormalizerInterface $resolver, mixed $source, ?string $identifierPath): array;
 
 
 	public function getTotalCount(mixed $source): int;

@@ -18,3 +18,10 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    Tito10047\BatchSelectionBundle\Tests\App\AssetMapper\Src\ServiceHelper:
+        arguments:
+            $normalizers: !tagged batch_selection.identifier_normalizer
+            $loaders: !tagged batch_selection.identity_loader
+        public: true
+

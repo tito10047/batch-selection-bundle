@@ -8,6 +8,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use RuntimeException;
 use InvalidArgumentException;
+use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
 
 /**
  * Loader responsible for extracting identifiers and counts from a Doctrine ORM Query object.
@@ -30,7 +31,7 @@ class DoctrineQueryLoader implements IdentityLoaderInterface
 	 * @param Query|QueryBuilder $source
 	 * @return array<int|string>
 	 */
-	public function loadAllIdentifiers(mixed $source, ?string $identifierPath): array
+	public function loadAllIdentifiers(?IdentifierNormalizerInterface $resolver, mixed $source, ?string $identifierPath): array
 	{
 		if (!$this->supports($source)) {
 			throw new InvalidArgumentException('Source must be a Doctrine Query instance.');
