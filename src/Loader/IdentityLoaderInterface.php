@@ -4,7 +4,7 @@ namespace Tito10047\BatchSelectionBundle\Loader;
 
 interface IdentityLoaderInterface {
 
-	public function loadAllIdentifiers(mixed $source, string $identifierPath = 'id'): array;
+	public function loadAllIdentifiers(mixed $source, ?string $identifierPath): array;
 
 
 	public function getTotalCount(mixed $source): int;

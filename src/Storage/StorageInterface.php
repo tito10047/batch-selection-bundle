@@ -14,7 +14,7 @@ use Tito10047\BatchSelectionBundle\Enum\SelectionMode;
  * or if they exist in the database. It only persists scalar values (int/string).
  * Complex logic regarding objects/UUIDs must be handled by the Manager layer.
  */
-interface SelectionStorageInterface
+interface StorageInterface
 {
 	/**
 	 * Adds identifiers to the storage for a specific context.

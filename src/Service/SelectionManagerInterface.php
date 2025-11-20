@@ -4,9 +4,8 @@ namespace Tito10047\BatchSelectionBundle\Service;
 
 interface SelectionManagerInterface {
 
-	public function registerSource(string $key, mixed $source): static;
+	public function registerSource(string $key, mixed $source, string $type, ?string $identifierPath = null): SelectionInterface;
 
-	public function clear(string $key): static;
+	public function getSelection(string $key, string $type, ?string $identifierPath = null): SelectionInterface;
 
-	public function isSelected(string $key, mixed $item): bool;
 }

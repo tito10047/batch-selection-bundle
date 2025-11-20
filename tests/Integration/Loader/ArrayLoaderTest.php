@@ -23,7 +23,7 @@ class ArrayLoaderTest extends AssetMapperKernelTestCase
         $this->assertSame(10, $loader->getTotalCount($records));
 
         $ids = array_map(fn(RecordInteger $record) => $record->getId(), $records);
-        $foundIds = $loader->loadAllIdentifiers($records);
+        $foundIds = $loader->loadAllIdentifiers($records, "id");
 
         $this->assertEquals($ids, $foundIds);
     }

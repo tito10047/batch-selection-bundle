@@ -43,7 +43,7 @@ class DoctrineCollectionLoader implements IdentityLoaderInterface
 	 *
 	 * @inheritDoc
 	 */
-	public function loadAllIdentifiers(mixed $source, string $identifierPath = 'id'): array
+	public function loadAllIdentifiers(mixed $source, ?string $identifierPath): array
 	{
 		if (!$this->supports($source)) {
 			throw new \InvalidArgumentException('Source must be a Doctrine Collection.');

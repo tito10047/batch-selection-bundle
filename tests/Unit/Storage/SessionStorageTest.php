@@ -4,41 +4,23 @@ namespace Tito10047\BatchSelectionBundle\Tests\Unit\Storage;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Tito10047\BatchSelectionBundle\Enum\SelectionMode;
 use Tito10047\BatchSelectionBundle\Storage\SessionStorage;
+use Tito10047\BatchSelectionBundle\Tests\Trait\SessionInterfaceTrait;
 
 class SessionStorageTest extends TestCase
 {
+	use SessionInterfaceTrait;
+
     private SessionStorage $storage;
 
-    private array $sessionStore;
 
     protected function setUp(): void
     {
-        $this->sessionStore = [];
-
-        // Create a mock SessionInterface that reads/writes from an in-memory array
-        $session = $this->createMock(SessionInterface::class);
-
-        $session->method('get')
-            ->willReturnCallback(function (string $key, mixed $default = null) {
-                return $this->sessionStore[$key] ?? $default;
-            });
-
-        $session->method('set')
-            ->willReturnCallback(function (string $key, mixed $value): void {
-                $this->sessionStore[$key] = $value;
-            });
-
-        $session->method('remove')
-            ->willReturnCallback(function (string $key): void {
-                unset($this->sessionStore[$key]);
-            });
 
         // Mock RequestStack to return our fake session
         $requestStack = $this->createMock(RequestStack::class);
-        $requestStack->method('getSession')->willReturn($session);
+        $requestStack->method('getSession')->willReturn($this->mockSessionInterface());
 
         $this->storage = new SessionStorage($requestStack);
     }

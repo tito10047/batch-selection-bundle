@@ -8,7 +8,7 @@ class ScalarNormalizer implements IdentifierNormalizerInterface{
 		return is_scalar($item);
 	}
 
-	public function normalize(mixed $item, string $identifierPath): string|int {
+	public function normalize(mixed $item, ?string $identifierPath): string|int {
 		if (is_int($item) || is_string($item)) {
 			return $item;
 		}

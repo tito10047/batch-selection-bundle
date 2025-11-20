@@ -11,7 +11,7 @@ class ObjectNormalizer implements IdentifierNormalizerInterface
 		return is_object($item);
 	}
 
-	public function normalize(mixed $item, string $identifierPath): string|int
+	public function normalize(mixed $item, ?string $identifierPath): string|int
 	{
 		$accessor = PropertyAccess::createPropertyAccessor();
 

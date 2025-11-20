@@ -16,7 +16,7 @@ class ArrayLoader implements IdentityLoaderInterface
 		return is_array($source);
 	}
 
-	public function loadAllIdentifiers(mixed $source, string $identifierPath = 'id'): array
+	public function loadAllIdentifiers(mixed $source, ?string $identifierPath): array
 	{
 		if (!is_array($source)) {
 			throw new \InvalidArgumentException('Source must be an array.');

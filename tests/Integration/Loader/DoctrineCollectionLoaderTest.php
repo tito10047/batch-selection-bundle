@@ -24,7 +24,7 @@ class DoctrineCollectionLoaderTest extends AssetMapperKernelTestCase
         $this->assertSame(10, $loader->getTotalCount($collection));
 
         $ids = array_map(fn(RecordInteger $record) => $record->getId(), $records);
-        $foundIds = $loader->loadAllIdentifiers($collection);
+        $foundIds = $loader->loadAllIdentifiers($collection, "id");
 
         $this->assertEquals($ids, $foundIds);
     }

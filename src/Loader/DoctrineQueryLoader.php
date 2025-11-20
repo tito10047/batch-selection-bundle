@@ -30,7 +30,7 @@ class DoctrineQueryLoader implements IdentityLoaderInterface
 	 * @param Query|QueryBuilder $source
 	 * @return array<int|string>
 	 */
-	public function loadAllIdentifiers(mixed $source, string $identifierPath = 'id'): array
+	public function loadAllIdentifiers(mixed $source, ?string $identifierPath): array
 	{
 		if (!$this->supports($source)) {
 			throw new InvalidArgumentException('Source must be a Doctrine Query instance.');

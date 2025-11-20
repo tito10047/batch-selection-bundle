@@ -17,7 +17,7 @@ use Tito10047\BatchSelectionBundle\Enum\SelectionMode;
  * 		]
  * ]
  */
-class SessionStorage implements SelectionStorageInterface
+class SessionStorage implements StorageInterface
 {
 	private const SESSION_PREFIX = '_batch_selection_';
 

@@ -23,5 +23,5 @@ interface IdentifierNormalizerInterface
 	 * @return string|int The scalar identifier.
 	 * @throws \RuntimeException If normalization fails.
 	 */
-	public function normalize(mixed $item, string $identifierPath): string|int;
+	public function normalize(mixed $item, ?string $identifierPath): string|int;
 }
