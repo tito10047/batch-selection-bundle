@@ -1,0 +1,68 @@
+{
+  "name": "tito10047/batch-selection-bundle",
+  "type": "symfony-bundle",
+  "license": "MIT",
+  "description": "Symfony bundle for handling persistent selections across paginated lists using Session or other storage.",
+  "keywords": [
+    "symfony",
+    "selection",
+    "batch",
+    "pagination",
+    "ui",
+    "symfony-ux"
+  ],
+  "minimum-stability": "stable",
+  "authors": [
+    {
+      "name": "Jozef Môstka",
+      "email": "jozef@mostka.sk"
+    }
+  ],
+  "require": {
+    "php": ">=8.1",
+    "symfony/framework-bundle": "^6.4|^7.3",
+    "symfony/property-access": "^6.4|^7.3",
+    "symfony/translation": "^6.4|^7.3",
+    "symfony/twig-bundle": "^6.4|^7.3"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "symfony/flex": true,
+      "symfony/runtime": true
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "Tito10047\\BatchSelectionBundle\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tito10047\\BatchSelectionBundle\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "symfony-web-dir": "./tests/App/AssetMapper/public",
+    "public-dir": "./tests/App/AssetMapper/public",
+    "symfony": {
+      "require": "6.4.*"
+    }
+  },
+  "require-dev": {
+    "dama/doctrine-test-bundle": "^6.7",
+    "pagerfanta/pagerfanta": "^3.6",
+    "phpunit/phpunit": "^10.5",
+    "symfony/asset-mapper": "6.4.*",
+    "symfony/dotenv": "6.4.*",
+    "symfony/http-client": "6.4.*",
+    "symfony/maker-bundle": "^1.39",
+    "symfony/orm-pack": "^2.5",
+    "symfony/phpunit-bridge": "^7.3",
+    "symfony/runtime": "6.4.*",
+    "symfony/stimulus-bundle": "^2.31",
+    "symfony/uid": "6.4.*",
+    "symfony/yaml": "6.4.*",
+    "zenstruck/foundry": "^2.0"
+  }
+}
