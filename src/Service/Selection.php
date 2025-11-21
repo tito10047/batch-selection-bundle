@@ -66,11 +66,13 @@ class Selection implements SelectionInterface, RememberAllInterface, HasModeInte
 	public function selectAll(): static {
 		$this->storage->clear($this->key);
 		$this->storage->setMode($this->key,SelectionMode::EXCLUDE);
+		return $this;
 	}
 
 	public function unselectAll(): static {
 		$this->storage->clear($this->key);
 		$this->storage->setMode($this->key,SelectionMode::INCLUDE);
+		return $this;
 	}
 
 	public function getSelectedIdentifiers(): array {
@@ -106,4 +108,15 @@ class Selection implements SelectionInterface, RememberAllInterface, HasModeInte
 		return $this;
 	}
 
+	public function isSelectedAll(): bool {
+		return $this->getMode() == SelectionMode::EXCLUDE && count($this->getSelectedIdentifiers())==0;
+	}
+
+	public function getTotal(): int {
+		return count($this->storage->getStoredIdentifiers($this->getAllContext()));
+	}
+
+	public function normalize(mixed $item): int|string {
+		return $this->normalizer->normalize($item, $this->identifierPath);
+	}
 }

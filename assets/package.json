@@ -1,0 +1,31 @@
+{
+  "name": "@tito10047/batch-selection-bundle",
+  "description": "Symfony bundle for handling persistent selections across paginated lists using Session or other storage.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "symfony-ux",
+    "twig"
+  ],
+  "main": "controllers/batch-selection_controller.js",
+  "symfony": {
+    "controllers": {
+      "batch-selection": {
+        "main": "controllers/batch-selection_controller.js",
+        "webpackMode": "eager",
+        "fetch": "eager",
+        "enabled": true
+      }
+    },
+    "importmap": {
+      "@hotwired/stimulus": "^3.0.0"
+    }
+  },
+  "peerDependencies": {
+    "@hotwired/stimulus": "^3.0.0"
+  },
+  "devDependencies": {
+    "@hotwired/stimulus": "^3.0.0"
+  }
+}

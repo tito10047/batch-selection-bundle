@@ -21,6 +21,10 @@ use Tito10047\BatchSelectionBundle\Service\SelectionManagerInterface;
 use Tito10047\BatchSelectionBundle\Storage\SessionStorage;
 use Tito10047\BatchSelectionBundle\Storage\StorageInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Tito10047\BatchSelectionBundle\Twig\SelectionExtension;
+use Tito10047\BatchSelectionBundle\Twig\SelectionRuntime;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Tito10047\BatchSelectionBundle\Controller\SelectController;
 
 /**
  * Konfigurácia služieb pre BatchSelectionBundle – bez autowire/autoconfigure.
@@ -81,7 +85,28 @@ return static function (ContainerConfigurator $container): void {
             ->arg('$loaders', tagged_iterator('batch_selection.identity_loader'))
             ->arg('$normalizer', service('batch_selection.normalizer.object'))
             ->arg('$identifierPath', 'id')
+            ->tag('batch_selection.manager', ['name' => 'default'])
 		->alias(SelectionManagerInterface::class, 'batch_selection.manager.default')
+    ;
+
+    // --- Twig integration ---
+    $services
+        ->set(SelectionExtension::class)
+            ->tag('twig.extension')
+    ;
+
+    $services
+        ->set(SelectionRuntime::class)
+            ->arg('$selectionManagers', tagged_iterator('batch_selection.manager', 'name'))
+            ->arg('$router', service(UrlGeneratorInterface::class))
+            ->tag('twig.runtime')
+    ;
+
+    // --- Controllers ---
+    $services
+        ->set(SelectController::class)
+            ->public()
+            ->arg('$selectionManagers', tagged_iterator('batch_selection.manager', 'name'))
     ;
 
 };

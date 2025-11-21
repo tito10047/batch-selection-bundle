@@ -21,6 +21,7 @@ use function Symfony\Component\String\u;
 class BatchSelectionBundle extends AbstractBundle
 {
 	protected string $extensionAlias = 'batch_selection';
+	public const STIMULUS_CONTROLLER='tito10047--batch-selection-bundle--batch-selection';
     public function configure(DefinitionConfigurator $definition): void
     {
         $definition->import('../config/definition.php');
@@ -41,6 +42,7 @@ class BatchSelectionBundle extends AbstractBundle
 				->arg('$loaders', tagged_iterator('batch_selection.identity_loader'))
 				->arg('$normalizer', $normalizer)
 				->arg('$identifierPath', $identifierPath)
+				->tag('batch_selection.manager', ['name' => $name])
 				;
 		}
     }

@@ -1,0 +1,2 @@
+batch_selection:
+    resource: '@BatchSelectionBundle/config/routes.php'
