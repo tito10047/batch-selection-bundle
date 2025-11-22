@@ -27,11 +27,11 @@ class SelectionExtensionTest extends AssetMapperKernelTestCase
             'batch_selection_total',
             'batch_selection_count',
             'batch_selection_stimulus_controller',
-            'batch_selection_stimulus_controller_name',
         ] as $functionName) {
             $this->assertNotNull($twig->getFunction($functionName), sprintf('Twig function %s should be registered.', $functionName));
-        }
-    }
+		}
+		$this->assertArrayHasKey('batch_selection_stimulus_controller_name',$twig->getGlobals());
+	}
 
     public function testTwigFunctionsBehavior(): void
     {
