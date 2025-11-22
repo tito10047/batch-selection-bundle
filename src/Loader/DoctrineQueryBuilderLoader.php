@@ -16,7 +16,11 @@ use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
  */
 class DoctrineQueryBuilderLoader implements IdentityLoaderInterface
 {
-    public function supports(mixed $source): bool
+	public function __construct(
+		private IdentifierNormalizerInterface $arrayNormalizer
+	) { }
+
+	public function supports(mixed $source): bool
     {
         return $source instanceof QueryBuilder;
     }
@@ -63,8 +67,10 @@ class DoctrineQueryBuilderLoader implements IdentityLoaderInterface
         $baseQb->setFirstResult(null);
         $baseQb->setMaxResults(null);
 
-        $rows = $baseQb->getQuery()->getScalarResult();
-        return array_map('current', $rows);
+        $rows = $baseQb->getQuery()->getResult();
+        return array_map(function($item)use($identifierPath){
+			return $this->arrayNormalizer->normalize($item, $identifierPath);
+		}, $rows);
     }
 
     /**

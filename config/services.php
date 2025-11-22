@@ -73,6 +73,7 @@ return static function (ContainerConfigurator $container): void {
 
     $services
         ->set(DoctrineQueryBuilderLoader::class)
+			->arg('$arrayNormalizer', service("batch_selection.normalizer.array"))
 		->tag(AutoTagIdentityLoadersPass::TAG)
     ;
 

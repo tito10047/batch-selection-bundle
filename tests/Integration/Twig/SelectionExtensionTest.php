@@ -172,7 +172,7 @@ class SelectionExtensionTest extends AssetMapperKernelTestCase
 
         // Provide custom data-controller to be concatenated after the bundle's default
         $tpl = $twig->createTemplate(
-            "{{ batch_selection_stimulus_controller('twig_key', { 'data-controller': 'extra-controller' }) }}"
+            "{{ batch_selection_stimulus_controller('twig_key', 'extra-controller' ) }}"
         );
 
         $attrs = $tpl->render();
@@ -185,7 +185,7 @@ class SelectionExtensionTest extends AssetMapperKernelTestCase
 
         // If custom includes duplicate default, it should be de-duplicated
         $tplDedupe = $twig->createTemplate(
-            "{{ batch_selection_stimulus_controller('twig_key', { 'data-controller': 'extra-controller' }) }}"
+            "{{ batch_selection_stimulus_controller('twig_key', 'extra-controller') }}"
         );
         $attrsDedupe = $tplDedupe->render();
         $this->assertStringContainsString(

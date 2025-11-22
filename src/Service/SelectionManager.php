@@ -18,7 +18,7 @@ final class SelectionManager implements SelectionManagerInterface {
 	) {
 	}
 
-	public function registerSource(string $key, mixed $source): SelectionInterface {
+	public function registerSource(string $key, mixed $source, ?IdentifierNormalizerInterface $normalizer = null): SelectionInterface {
 		$loader = $this->findLoader($source);
 
 		$selection = new Selection($key, $this->identifierPath, $this->storage, $this->normalizer);
@@ -28,7 +28,7 @@ final class SelectionManager implements SelectionManagerInterface {
 				throw new NormalizationFailedException('Item is not an object.');
 			}
 		}
-		$selection->rememberAll($loader->loadAllIdentifiers($this->normalizer, $source, $this->identifierPath));
+		$selection->rememberAll($loader->loadAllIdentifiers($normalizer??$this->normalizer, $source, $this->identifierPath));
 
 		return $selection;
 	}

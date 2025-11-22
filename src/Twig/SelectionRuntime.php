@@ -20,24 +20,31 @@ class SelectionRuntime implements RuntimeExtensionInterface {
 	) {
 	}
 
-	public function getStimulusController(string $key, array $attributes = [], string $manager = 'default', bool $asArray=false): string|array {
+	public function getStimulusController(string $key, string $controller = null, array $variables = [], string $manager = 'default', bool $asArray = false): string|array {
 		$toggleUrl    = $this->router->generate('batch_selection_toggle');
 		$selectAllUrl = $this->router->generate('batch_selection_select_all');
 		$selectRange  = $this->router->generate('batch_selection_select_range');
 
 
 		$myAttributes = [
-			"data-controller"                                     => $this->controllerName,
-			// URL hodnoty
-			"data-{$this->controllerName}-url-toggle-value"       => $toggleUrl,
-			"data-{$this->controllerName}-url-select-all-value"   => $selectAllUrl,
-			"data-{$this->controllerName}-url-select-range-value" => $selectRange,
-			// Ostatné hodnoty
-			"data-{$this->controllerName}-key-value"              => $key,
-			"data-{$this->controllerName}-manager-value"          => $manager,
+			"data-controller" => $this->controllerName,
 		];
+		$variables    = $variables + [
+				"urlToggle"      => $toggleUrl,
+				"urlSelectAll"   => $selectAllUrl,
+				"urlSelectRange" => $selectRange,
+				"key"            => $key,
+				"manager"        => $manager
+			];
+		foreach ($variables as $name => $value) {
+			$name                                                     = strtolower(preg_replace('/([a-zA-Z])(?=[A-Z])/', '$1-', $name));
+			$attributes["data-{$this->controllerName}-{$name}-value"] = $value;
+		}
+		if ($controller){
+			$attributes["data-controller"]=$controller;
+		}
 		$attributes = $this->mergeAttributes($myAttributes, $attributes);
-		if ($asArray){
+		if ($asArray) {
 			return $attributes;
 		}
 		return $this->renderAttributes($attributes);
@@ -76,7 +83,7 @@ class SelectionRuntime implements RuntimeExtensionInterface {
 		return "<input type='checkbox' {$attributes} data-{$this->controllerName}-target=\"checkbox\" data-action='{$this->controllerName}#toggle' data-{$this->controllerName}-id-param='{$id}' value='{$id}'>";
 	}
 
-	public function mergeAttributes(array $default, array $custom):array {
+	public function mergeAttributes(array $default, array $custom): array {
 
 		// Merge default and custom attributes with simple rules:
 		// - Start from defaults

@@ -4,6 +4,8 @@ namespace Tito10047\BatchSelectionBundle\Tests\Integration\Loader;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Tito10047\BatchSelectionBundle\Loader\DoctrineQueryBuilderLoader;
+use Tito10047\BatchSelectionBundle\Normalizer\ArrayNormalizer;
+use Tito10047\BatchSelectionBundle\Normalizer\ObjectNormalizer;
 use Tito10047\BatchSelectionBundle\Tests\App\AssetMapper\Src\Entity\RecordInteger;
 use Tito10047\BatchSelectionBundle\Tests\App\AssetMapper\Src\Factory\RecordIntegerFactory;
 use Tito10047\BatchSelectionBundle\Tests\App\AssetMapper\Src\Factory\TestCategoryFactory;
@@ -15,7 +17,7 @@ class DoctrineQueryBuilderLoaderTest extends AssetMapperKernelTestCase
     {
         $records = RecordIntegerFactory::createMany(10);
 
-        $loader = new DoctrineQueryBuilderLoader();
+        $loader = new DoctrineQueryBuilderLoader(new ArrayNormalizer());
 
         /** @var EntityManagerInterface $em */
         $em = self::getContainer()->get('doctrine')->getManager();
@@ -31,7 +33,7 @@ class DoctrineQueryBuilderLoaderTest extends AssetMapperKernelTestCase
 
         $ids = array_map(fn(RecordInteger $record) => $record->getId(), $records);
         sort($ids);
-        $foundIds = $loader->loadAllIdentifiers(null, $qb, 'id');
+        $foundIds = $loader->loadAllIdentifiers($normalizer, $qb, 'id');
         sort($foundIds);
 
         $this->assertEquals($ids, $foundIds);
@@ -49,7 +51,7 @@ class DoctrineQueryBuilderLoaderTest extends AssetMapperKernelTestCase
 			array_filter($records, fn(RecordInteger $r) => $r->getName()=='keep', ARRAY_FILTER_USE_BOTH)
 		));
 
-        $loader = new DoctrineQueryBuilderLoader();
+        $loader = new DoctrineQueryBuilderLoader(new ArrayNormalizer());
 
         $qb = $em->createQueryBuilder()
             ->select('i')
@@ -85,7 +87,7 @@ class DoctrineQueryBuilderLoaderTest extends AssetMapperKernelTestCase
 		]);
 
 		$records = RecordIntegerFactory::createMany(10);
-        $loader = new DoctrineQueryBuilderLoader();
+        $loader = new DoctrineQueryBuilderLoader(new ArrayNormalizer());
 
 		$expectedIds = array_values(array_map(
 			fn(RecordInteger $r) => $r->getId(),
