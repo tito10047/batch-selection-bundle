@@ -8,7 +8,6 @@
     "symfony-ux",
     "twig"
   ],
-  "main": "controllers/batch-selection_controller.js",
   "symfony": {
     "controllers": {
       "batch-selection": {

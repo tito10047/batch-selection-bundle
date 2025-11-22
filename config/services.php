@@ -16,6 +16,7 @@ use Tito10047\BatchSelectionBundle\Normalizer\ScalarNormalizer;
 use Tito10047\BatchSelectionBundle\Loader\ArrayLoader;
 use Tito10047\BatchSelectionBundle\Loader\DoctrineCollectionLoader;
 use Tito10047\BatchSelectionBundle\Loader\DoctrineQueryLoader;
+use Tito10047\BatchSelectionBundle\Loader\DoctrineQueryBuilderLoader;
 use Tito10047\BatchSelectionBundle\Service\SelectionManager;
 use Tito10047\BatchSelectionBundle\Service\SelectionManagerInterface;
 use Tito10047\BatchSelectionBundle\Storage\SessionStorage;
@@ -67,6 +68,11 @@ return static function (ContainerConfigurator $container): void {
 
     $services
         ->set(DoctrineQueryLoader::class)
+		->tag(AutoTagIdentityLoadersPass::TAG)
+    ;
+
+    $services
+        ->set(DoctrineQueryBuilderLoader::class)
 		->tag(AutoTagIdentityLoadersPass::TAG)
     ;
 

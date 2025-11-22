@@ -34,6 +34,10 @@ final class RecordIntegerFactory extends PersistentProxyObjectFactory{
     protected function defaults(): array|callable
     {
         return [
+			"name"=>self::faker()->boolean(50) ? 'keep' : 'drop',
+			"category"=>TestCategoryFactory::randomOrCreate([
+				"name"=>self::faker()->words(1,true)
+			])
         ];
     }
 

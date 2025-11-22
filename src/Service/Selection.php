@@ -27,7 +27,7 @@ class Selection implements SelectionInterface, RememberAllInterface, HasModeInte
 	}
 
 	public function select(mixed $item): static {
-		$id = $this->normalizer->normalize($item, $this->identifierPath);
+		$id = is_scalar($item)?$item:$this->normalizer->normalize($item, $this->identifierPath);
 		if ($this->storage->getMode($this->key) === SelectionMode::INCLUDE) {
 			$this->storage->add($this->key, [$id]);
 		} else {
@@ -37,7 +37,7 @@ class Selection implements SelectionInterface, RememberAllInterface, HasModeInte
 	}
 
 	public function unselect(mixed $item): static {
-		$id = $this->normalizer->normalize($item, $this->identifierPath);
+		$id = is_scalar($item)?$item:$this->normalizer->normalize($item, $this->identifierPath);
 		if ($this->storage->getMode($this->key) === SelectionMode::INCLUDE) {
 			$this->storage->remove($this->key, [$id]);
 		} else {
@@ -49,7 +49,7 @@ class Selection implements SelectionInterface, RememberAllInterface, HasModeInte
 	public function selectMultiple(array $items): static {
 		$ids = [];
 		foreach ($items as $item) {
-			$ids[] = $this->normalizer->normalize($item, $this->identifierPath);
+			$ids[] = is_scalar($item)?$item:$this->normalizer->normalize($item, $this->identifierPath);
 		}
 		$this->storage->add($this->key, $ids);
 		return $this;
@@ -57,7 +57,7 @@ class Selection implements SelectionInterface, RememberAllInterface, HasModeInte
 	public function unselectMultiple(array $items): static {
 		$ids = [];
 		foreach ($items as $item) {
-			$ids[] = $this->normalizer->normalize($item, $this->identifierPath);
+			$ids[] = is_scalar($item)?$item:$this->normalizer->normalize($item, $this->identifierPath);
 		}
 		$this->storage->remove($this->key,$ids);
 		return $this;

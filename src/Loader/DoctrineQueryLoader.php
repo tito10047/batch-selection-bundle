@@ -21,53 +21,53 @@ class DoctrineQueryLoader implements IdentityLoaderInterface
 	 * @inheritDoc
 	 */
 	public function supports(mixed $source): bool
-	{
-		// Source must be a Doctrine Query object
-		return $source instanceof Query || $source instanceof QueryBuilder;
-	}
+ {
+        // Podporuje iba Doctrine Query (nie QueryBuilder)
+        return $source instanceof Query;
+    }
 
 	/**
 	 * @inheritDoc
 	 * @param Query|QueryBuilder $source
 	 * @return array<int|string>
 	 */
-	public function loadAllIdentifiers(?IdentifierNormalizerInterface $resolver, mixed $source, ?string $identifierPath): array
-	{
-		if (!$this->supports($source)) {
-			throw new InvalidArgumentException('Source must be a Doctrine Query instance.');
-		}
+ public function loadAllIdentifiers(?IdentifierNormalizerInterface $resolver, mixed $source, ?string $identifierPath): array
+ {
+     if (!$this->supports($source)) {
+         throw new InvalidArgumentException('Source must be a Doctrine Query instance.');
+     }
 
-		if ($source instanceof QueryBuilder) {
-			$source = $source->getQuery();
-		}
+     /** @var Query $baseQuery */
+     $baseQuery = clone $source;
+     $entityManager = $baseQuery->getEntityManager();
+     // Parametre si vezmeme z pôvodného zdroja (klon môže prísť o väzbu na parametre)
+     $sourceParameters = $source->getParameters();
 
-		/** @var Query $baseQuery */
-		$baseQuery = clone $source;
+     [$rootEntity, $rootAlias] = $this->resolveRootFromDql($baseQuery);
 
-		$entityManager = $baseQuery->getEntityManager();
+     $metadata = $entityManager->getClassMetadata($rootEntity);
+     $identifierFields = $metadata->getIdentifierFieldNames();
+     if (count($identifierFields) !== 1) {
+         throw new RuntimeException('Composite alebo neštandardný identifikátor nie je podporovaný pre loadAllIdentifiers().');
+     }
 
-		// zisti root entitu a alias z povodnej DQL
-		[$rootEntity, $rootAlias] = $this->resolveRootFromDql($baseQuery);
+     $defaultIdField = $identifierFields[0];
+     $identifierField = ($identifierPath !== null && $identifierPath !== '') ? $identifierPath : $defaultIdField;
 
-		// zisti skutočné meno ID poľa (iba jednoduchý, nie zložený kľúč)
-		$metadata = $entityManager->getClassMetadata($rootEntity);
-		$identifierFields = $metadata->getIdentifierFieldNames();
-		if (count($identifierFields) !== 1) {
-			throw new RuntimeException('Composite alebo neštandardný identifikátor nie je podporovaný pre loadAllIdentifiers().');
-		}
+     $dql = $baseQuery->getDQL();
+     $posFrom = stripos($dql, ' from ');
+     if ($posFrom === false) {
+         throw new RuntimeException('Neplatný DQL – chýba FROM klauzula.');
+     }
+     $newDql = 'SELECT ' . $rootAlias . '.' . $identifierField . substr($dql, $posFrom);
 
-		$defaultIdField = $identifierFields[0];
-		$identifierField = $identifierPath !== '' ? $identifierPath : $defaultIdField;
+     $idQuery = $entityManager->createQuery($newDql);
+     // prenes parametre z pôvodného dotazu (aby WHERE ostal funkčný)
+     $idQuery->setParameters($sourceParameters);
 
-		$qb = $entityManager->createQueryBuilder();
-		$qb->select($rootAlias . '.' . $identifierField)
-			->from($rootEntity, $rootAlias);
-
-		$idQuery = $qb->getQuery();
-		$rows = $idQuery->getScalarResult();
-
-		return array_map('current', $rows);
-	}
+     $rows = $idQuery->getScalarResult();
+     return array_map('current', $rows);
+ }
 
 	/**
 	 * @inheritDoc
@@ -79,9 +79,7 @@ class DoctrineQueryLoader implements IdentityLoaderInterface
 			throw new InvalidArgumentException('Source must be a Doctrine Query instance.');
 		}
 
-		if ($source instanceof QueryBuilder) {
-			$source = $source->getQuery();
-		}
+      // očakáva sa iba Query
 
 		/** @var Query $baseQuery */
 		$baseQuery = clone $source;
@@ -89,26 +87,41 @@ class DoctrineQueryLoader implements IdentityLoaderInterface
 
 		[$rootEntity, $rootAlias] = $this->resolveRootFromDql($baseQuery);
 
-		// ak je k dispozícii jednoduché ID pole, počítaj nad ním, inak COUNT(alias)
+  // ak je k dispozícii jednoduché ID pole, rátaj COUNT(DISTINCT alias.id), inak COUNT(alias)
 		$metadata = $entityManager->getClassMetadata($rootEntity);
 		$identifierFields = $metadata->getIdentifierFieldNames();
 		$countExpr = null;
-		if (count($identifierFields) === 1) {
-			$countExpr = $rootAlias . '.' . $identifierFields[0];
-		} else {
-			$countExpr = $rootAlias; // fallback
-		}
+  if (count($identifierFields) === 1) {
+            $countExpr = 'COUNT(DISTINCT ' . $rootAlias . '.' . $identifierFields[0] . ')';
+        } else {
+            $countExpr = 'COUNT(' . $rootAlias . ')'; // fallback
+        }
 
-		$qb = $entityManager->createQueryBuilder();
-		$qb->select($qb->expr()->count($countExpr))
-			->from($rootEntity, $rootAlias);
+        // poskladaj COUNT dopyt z pôvodného DQL: vymeniť SELECT časť a odstrániť ORDER BY
+        $dql = $baseQuery->getDQL();
+        $posFrom = stripos($dql, ' from ');
+        if ($posFrom === false) {
+            throw new RuntimeException('Neplatný DQL – chýba FROM klauzula.');
+        }
 
-		$countQuery = $qb->getQuery();
-		try {
-			return (int) $countQuery->getSingleScalarResult();
-		} catch (\Exception $e) {
-			throw new RuntimeException('Failed to execute optimized count query.', 0, $e);
-		}
+        // odstráň ORDER BY (ak je)
+        $dqlTail = substr($dql, $posFrom);
+        $posOrderBy = stripos($dqlTail, ' order by ');
+        if ($posOrderBy !== false) {
+            $dqlTail = substr($dqlTail, 0, $posOrderBy);
+        }
+
+        $newDql = 'SELECT ' . $countExpr . $dqlTail;
+
+        $countQuery = $entityManager->createQuery($newDql);
+        // použijeme parametre z pôvodného Query (nie z klonu)
+        $countQuery->setParameters($source->getParameters());
+
+        try {
+            return (int) $countQuery->getSingleScalarResult();
+        } catch (\Exception $e) {
+            throw new RuntimeException('Failed to execute optimized count query.', 0, $e);
+        }
 	}
 
 	/**

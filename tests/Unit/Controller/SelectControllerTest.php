@@ -104,9 +104,8 @@ class SelectControllerTest extends TestCase {
 				'manager'  => $managerId,
 				'selected' => '1',
 			],
-			request: [
-				'id' => $ids,
-			]
+			content: json_encode($ids),
+
 		);
 
 		$response = $controller->rowSelectorSelectRange($request);
@@ -132,9 +131,7 @@ class SelectControllerTest extends TestCase {
 				'manager'  => $managerId,
 				'selected' => '0',
 			],
-			request: [
-				'id' => $ids,
-			]
+			content: json_encode($ids)
 		);
 
 		$response = $controller->rowSelectorSelectRange($request);
@@ -218,9 +215,7 @@ class SelectControllerTest extends TestCase {
 				'manager'  => $managerId,
 				'selected' => '1',
 			],
-			request: [
-				'id' => $singleId,
-			]
+			content: json_encode($singleId)
 		);
 
 		$response = $controller->rowSelectorSelectRange($request);
@@ -244,9 +239,7 @@ class SelectControllerTest extends TestCase {
 				'manager'  => $managerId,
 				'selected' => '1',
 			],
-			request: [
-				// no 'id' key present -> should be treated as empty list
-			]
+			content: "[]"
 		);
 
 		$response = $controller->rowSelectorSelectRange($request);

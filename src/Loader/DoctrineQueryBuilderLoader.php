@@ -1,0 +1,142 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tito10047\BatchSelectionBundle\Loader;
+
+use Doctrine\ORM\Query;
+use Doctrine\ORM\QueryBuilder;
+use InvalidArgumentException;
+use RuntimeException;
+use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
+
+/**
+ * Loader pre Doctrine QueryBuilder.
+ * Zachováva pôvodné WHERE/JOINS a prepisuje len SELECT časť.
+ */
+class DoctrineQueryBuilderLoader implements IdentityLoaderInterface
+{
+    public function supports(mixed $source): bool
+    {
+        return $source instanceof QueryBuilder;
+    }
+
+    /**
+     * @param QueryBuilder $source
+     * @return array<int|string>
+     */
+    public function loadAllIdentifiers(?IdentifierNormalizerInterface $resolver, mixed $source, ?string $identifierPath): array
+    {
+        if (!$this->supports($source)) {
+            throw new InvalidArgumentException('Source must be a Doctrine QueryBuilder instance.');
+        }
+
+        $baseQb = clone $source;
+
+        $em = $baseQb->getEntityManager();
+
+        $rootAliases = $baseQb->getRootAliases();
+        $rootEntities = $baseQb->getRootEntities();
+        if (empty($rootAliases) || empty($rootEntities)) {
+            // fallback – vytiahni z DQL
+            $query = $baseQb->getQuery();
+            [$rootEntity, $rootAlias] = $this->resolveRootFromDql($query);
+        } else {
+            $rootAlias = $rootAliases[0];
+            $rootEntity = $rootEntities[0];
+        }
+
+        $metadata = $em->getClassMetadata($rootEntity);
+        $identifierFields = $metadata->getIdentifierFieldNames();
+        if (count($identifierFields) !== 1) {
+            throw new RuntimeException('Composite alebo neštandardný identifikátor nie je podporovaný pre loadAllIdentifiers().');
+        }
+
+        $defaultIdField = $identifierFields[0];
+        $identifierField = ($identifierPath !== null && $identifierPath !== '') ? $identifierPath : $defaultIdField;
+
+        // prepis SELECT, ostatné časti dotazu (WHERE, JOIN, GROUP BY, HAVING, ORDER BY) ponechaj
+        $baseQb->resetDQLPart('select');
+        $baseQb->select($rootAlias . '.' . $identifierField);
+
+        // ignoruj stránkovanie – chceme všetky identifikátory z danej filtrácie
+        $baseQb->setFirstResult(null);
+        $baseQb->setMaxResults(null);
+
+        $rows = $baseQb->getQuery()->getScalarResult();
+        return array_map('current', $rows);
+    }
+
+    /**
+     * @param QueryBuilder $source
+     */
+    public function getTotalCount(mixed $source): int
+    {
+        if (!$this->supports($source)) {
+            throw new InvalidArgumentException('Source must be a Doctrine QueryBuilder instance.');
+        }
+
+        $baseQb = clone $source;
+
+        $em = $baseQb->getEntityManager();
+
+        $rootAliases = $baseQb->getRootAliases();
+        $rootEntities = $baseQb->getRootEntities();
+        if (empty($rootAliases) || empty($rootEntities)) {
+            // fallback – vytiahni z DQL
+            $query = $baseQb->getQuery();
+            [$rootEntity, $rootAlias] = $this->resolveRootFromDql($query);
+        } else {
+            $rootAlias = $rootAliases[0];
+            $rootEntity = $rootEntities[0];
+        }
+
+        $metadata = $em->getClassMetadata($rootEntity);
+        $identifierFields = $metadata->getIdentifierFieldNames();
+
+        // COUNT výraz
+        if (count($identifierFields) === 1) {
+            $countExpr = 'COUNT(DISTINCT ' . $rootAlias . '.' . $identifierFields[0] . ')';
+        } else {
+            $countExpr = 'COUNT(' . $rootAlias . ')'; // fallback
+        }
+
+        // uprav SELECT na COUNT, odstráň orderBy, ignoruj stránkovanie
+        $baseQb->resetDQLPart('select');
+        $baseQb->resetDQLPart('orderBy');
+        $baseQb->select($countExpr);
+        $baseQb->setFirstResult(null);
+        $baseQb->setMaxResults(null);
+
+        try {
+            return (int) $baseQb->getQuery()->getSingleScalarResult();
+        } catch (\Exception $e) {
+            throw new RuntimeException('Failed to execute count query.', 0, $e);
+        }
+    }
+
+    /**
+     * Vytiahne root entitu a alias z Query DQL pomocou Doctrine Parsera.
+     *
+     * @return array{0:string,1:string} [entityClass, alias]
+     */
+    private function resolveRootFromDql(Query $query): array
+    {
+        $AST = $query->getAST();
+
+        /** @var Query\AST\IdentificationVariableDeclaration $from */
+        $from = $AST->fromClause->identificationVariableDeclarations[0] ?? null;
+        if ($from === null || $from->rangeVariableDeclaration === null) {
+            throw new RuntimeException('Nepodarilo sa zistiť root entitu z DQL dotazu.');
+        }
+
+        $rootEntity = $from->rangeVariableDeclaration->abstractSchemaName;
+        $rootAlias  = $from->rangeVariableDeclaration->aliasIdentificationVariable;
+
+        if (!is_string($rootEntity) || !is_string($rootAlias)) {
+            throw new RuntimeException('Neplatný FROM klauzula v DQL dotaze.');
+        }
+
+        return [$rootEntity, $rootAlias];
+    }
+}

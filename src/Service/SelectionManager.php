@@ -38,7 +38,7 @@ final class SelectionManager implements SelectionManagerInterface {
 	}
 
 
-	private function findLoader(mixed $source): mixed {
+	private function findLoader(mixed $source): IdentityLoaderInterface {
 		$loader = null;
 		foreach ($this->loaders as $_loader) {
 			if ($_loader->supports($source)) {

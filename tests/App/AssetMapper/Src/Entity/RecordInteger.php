@@ -3,6 +3,7 @@
 namespace Tito10047\BatchSelectionBundle\Tests\App\AssetMapper\Src\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Tito10047\BatchSelectionBundle\Tests\App\AssetMapper\Src\Entity\TestCategory;
 
 #[ORM\Entity]
 class RecordInteger {
@@ -12,7 +13,10 @@ class RecordInteger {
 	private ?int $id = null;
 
 	#[ORM\Column(name: 'name', type: 'string', length: 255, nullable: true)]
-	private ?string $name = null;
+ private ?string $name = null;
+
+ #[ORM\ManyToOne(targetEntity: TestCategory::class)]
+ private ?TestCategory $category = null;
 
 	public function getId(): ?int {
 		return $this->id;
@@ -27,9 +31,20 @@ class RecordInteger {
 		return $this->name;
 	}
 
-	public function setName(?string $name): self {
-		$this->name = $name;
-		return $this;
-	}
+    public function setName(?string $name): self {
+        $this->name = $name;
+        return $this;
+    }
+
+    public function getCategory(): ?TestCategory
+    {
+        return $this->category;
+    }
+
+    public function setCategory(?TestCategory $category): self
+    {
+        $this->category = $category;
+        return $this;
+    }
 
 }

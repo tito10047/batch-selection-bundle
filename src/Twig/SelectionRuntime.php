@@ -20,20 +20,27 @@ class SelectionRuntime implements RuntimeExtensionInterface {
 	) {
 	}
 
-	public function getStimulusController(string $key, string $manager = 'default'): string {
+	public function getStimulusController(string $key, array $attributes = [], string $manager = 'default', bool $asArray=false): string|array {
 		$toggleUrl    = $this->router->generate('batch_selection_toggle');
 		$selectAllUrl = $this->router->generate('batch_selection_select_all');
+		$selectRange  = $this->router->generate('batch_selection_select_range');
 
 
-		return join(' ', [
-			"data-controller=\"{$this->controllerName}\"",
+		$myAttributes = [
+			"data-controller"                                     => $this->controllerName,
 			// URL hodnoty
-			"data-{$this->controllerName}-url-toggle-value=\"{$toggleUrl}\"",
-			"data-{$this->controllerName}-url-select-all-value=\"{$selectAllUrl}\"",
+			"data-{$this->controllerName}-url-toggle-value"       => $toggleUrl,
+			"data-{$this->controllerName}-url-select-all-value"   => $selectAllUrl,
+			"data-{$this->controllerName}-url-select-range-value" => $selectRange,
 			// Ostatné hodnoty
-			"data-{$this->controllerName}-key-value=\"{$key}\"",
-			"data-{$this->controllerName}-manager-value=\"{$manager}\"",
-		]);
+			"data-{$this->controllerName}-key-value"              => $key,
+			"data-{$this->controllerName}-manager-value"          => $manager,
+		];
+		$attributes = $this->mergeAttributes($myAttributes, $attributes);
+		if ($asArray){
+			return $attributes;
+		}
+		return $this->renderAttributes($attributes);
 	}
 
 	public function isSelected(string $key, mixed $item, string $manager = 'default'): bool {
@@ -43,29 +50,101 @@ class SelectionRuntime implements RuntimeExtensionInterface {
 		return $selection->isSelected($id);
 	}
 
-	public function rowSelector(string $key, mixed $item, string $manager = 'default'): string {
+	public function isSelectedAll(string $key, string $manager = 'default'): bool {
+		$manager   = $this->getRowsSelector($manager);
+		$selection = $manager->getSelection($key);
+		return $selection->isSelectedAll();
+	}
+
+	public function rowSelector(string $key, mixed $item, array $attributes = [], string $manager = 'default'): string {
 		$selected  = "";
 		$manager   = $this->getRowsSelector($manager);
 		$selection = $manager->getSelection($key);
 
+		$myAttributes = [
+			"name"  => "row-selector[]",
+			"class" => "row-selector"
+		];
+
 		$id = $selection->normalize($item);
 		if ($selection->isSelected($id)) {
-			$selected = 'checked="checked" ';
+			$myAttributes["checked"] = 'checked';
 		}
 
-		return "<input type='checkbox' {$selected} name='row-selector[]' class='row-selector' data-{$this->controllerName}-target=\"checkbox\" data-action='{$this->controllerName}#toggle' data-item-id-param='{$id}'>";
+		$attributes = $this->renderAttributes($this->mergeAttributes($myAttributes, $attributes));
+
+		return "<input type='checkbox' {$attributes} data-{$this->controllerName}-target=\"checkbox\" data-action='{$this->controllerName}#toggle' data-{$this->controllerName}-id-param='{$id}' value='{$id}'>";
 	}
 
-	public function rowSelectorAll(string $key, string $manager = 'default'): string {
+	public function mergeAttributes(array $default, array $custom):array {
+
+		// Merge default and custom attributes with simple rules:
+		// - Start from defaults
+		// - "class" values are concatenated (default first, then custom) and de-duplicated
+		// - Boolean-like false/null removes the attribute
+		// - For other keys, custom overrides default
+		$attrs = $default;
+
+		foreach ($custom as $key => $value) {
+			if ($value === false || $value === null) {
+				unset($attrs[$key]);
+				continue;
+			}
+
+			// Merge token-list attributes: class and data-controller
+			if ($key === 'class' || $key === 'data-controller') {
+				$existing = isset($attrs[$key]) ? trim((string) $attrs[$key]) : '';
+				$incoming = trim((string) $value);
+
+				$tokens = array_merge(
+					$existing !== '' ? preg_split('/\s+/', $existing, -1, PREG_SPLIT_NO_EMPTY) : [],
+					$incoming !== '' ? preg_split('/\s+/', $incoming, -1, PREG_SPLIT_NO_EMPTY) : []
+				);
+
+				$attrs[$key] = implode(' ', array_unique($tokens));
+				continue;
+			}
+
+			$attrs[$key] = $value;
+		}
+		return $attrs;
+	}
+
+	public function renderAttributes(array $attributes): string {
+		// Render attributes: for boolean-like true use key="key", for strings escape
+		foreach ($attributes as $key => $value) {
+			if ($value === true || ($key === 'checked' && $value === 'checked')) {
+				$out[] = sprintf('%s="%s"', $key, $key);
+				continue;
+			}
+			if ($value === '') {
+				$out[] = sprintf('%s=""', $key);
+				continue;
+			}
+			$out[] = sprintf('%s="%s"', $key, htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+		}
+
+		return implode(' ', $out);
+	}
+
+	public function rowSelectorAll(string $key, array $attributes = [], string $manager = 'default'): string {
 		$selected = "";
 
 		$manager   = $this->getRowsSelector($manager);
 		$selection = $manager->getSelection($key);
+
+		$myAttributes = [
+			"name"  => "row-selector-all",
+			"class" => "row-selector"
+		];
+
 		if ($selection->isSelectedAll()) {
-			$selected = 'checked="checked" ';
+			$myAttributes["checked"] = 'checked';
 		}
 
-		return "<input type='checkbox' {$selected} name='row-selector-all' class='row-selector' data-{$this->controllerName}-target=\"selectAll\" data-action='{$this->controllerName}#selectAll'>";
+		$attributes = $this->renderAttributes($this->mergeAttributes($myAttributes, $attributes));
+
+		return "<input type='checkbox' {$attributes} data-{$this->controllerName}-target=\"selectAll\" data-action='{$this->controllerName}#selectAll'>";
 	}
 
 	public function getTotal(string $key, string $manager = 'default'): int {

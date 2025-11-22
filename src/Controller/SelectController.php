@@ -24,8 +24,8 @@ class SelectController {
 		$id       = $request->query->get("id", null);
 		$selected = $request->query->getBoolean("selected", true);
 
-		if (!$manager || !$key) {
-			throw new BadRequestHttpException("missing key or value");
+		if (!$manager || !$key || !$id) {
+			throw new BadRequestHttpException("Missing key or value or id");
 		}
 
 		$selector = $this->getRowsSelector($manager)->getSelection($key);
@@ -42,8 +42,10 @@ class SelectController {
 	public function rowSelectorSelectRange(Request $request): Response {
 		$key      = $request->query->getString("key", "");
 		$manager  = $request->query->getString("manager", "");
-		$idsParam = $request->request->all();
-		$ids      = $idsParam['id'] ?? [];
+		$ids = json_decode($request->getContent(), true);
+		if (json_last_error() !== JSON_ERROR_NONE || $ids === null) {
+			throw new BadRequestHttpException("Body is not valid json");
+		}
 		if (!is_array($ids)) {
 			$ids = [$ids];
 		}
