@@ -30,7 +30,7 @@ class SelectionInterfaceTest  extends TestCase{
 
 	public function testGetSelectedIdentifiersWithExcludeModeRemembersAll():void {
 		$selection = new Selection('test', null, $this->storage, $this->normalizer);
-		$selection->rememberAll([1, 2, 3]);
+		$selection->setSelection([1, 2, 3]);
 		$selection->setMode(SelectionMode::EXCLUDE);
 
 		/** @var SelectionInterface $selection */
@@ -93,7 +93,7 @@ class SelectionInterfaceTest  extends TestCase{
 	{
 		$selection = new Selection('ctx_destroy', null, $this->storage, $this->normalizer);
 		// Setup some state in both primary and __ALL__ contexts (using helper methods only for setup)
-		$selection->rememberAll([100, 200, 300]);
+		$selection->setSelection([100, 200, 300]);
 		$selection->select(200)->select(400);
 
 		// Sanity before destroy

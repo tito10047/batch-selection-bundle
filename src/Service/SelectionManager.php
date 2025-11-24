@@ -28,7 +28,13 @@ final class SelectionManager implements SelectionManagerInterface {
 				throw new NormalizationFailedException('Item is not an object.');
 			}
 		}
-		$selection->rememberAll($loader->loadAllIdentifiers($normalizer??$this->normalizer, $source, $this->identifierPath));
+		$cacheKey = $loader->getCacheKey($source);
+		if (!$selection->hasSelection($cacheKey)) {
+			$selection->setSelection(
+				$cacheKey,
+				$loader->loadAllIdentifiers($normalizer ?? $this->normalizer, $source, $this->identifierPath)
+			);
+		}
 
 		return $selection;
 	}

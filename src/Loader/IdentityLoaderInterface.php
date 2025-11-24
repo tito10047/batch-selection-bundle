@@ -12,4 +12,6 @@ interface IdentityLoaderInterface {
 	public function getTotalCount(mixed $source): int;
 
 	public function supports(mixed $source):bool;
+
+	public function getCacheKey(mixed $source):string;
 }

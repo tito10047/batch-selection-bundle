@@ -54,4 +54,8 @@ final class DoctrineCollectionLoader implements IdentityLoaderInterface
 
 		return $identifiers;
 	}
+
+	public function getCacheKey(mixed $source): string {
+		// TODO: Implement getCacheKey() method.
+	}
 }

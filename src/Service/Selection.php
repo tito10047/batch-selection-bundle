@@ -6,7 +6,7 @@ use Tito10047\BatchSelectionBundle\Enum\SelectionMode;
 use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
 use Tito10047\BatchSelectionBundle\Storage\StorageInterface;
 
-final class Selection implements SelectionInterface, RememberAllInterface, HasModeInterface {
+final class Selection implements SelectionInterface, SelectionStorageInterface, HasModeInterface {
 
 	public function __construct(
 		private readonly string                        $key,
@@ -85,9 +85,13 @@ final class Selection implements SelectionInterface, RememberAllInterface, HasMo
 		}
 	}
 
-	public function rememberAll(array $ids): static {
+	public function setSelection(string $cacheKey, array $ids, int|\DateInterval|null $ttl = null): static {
 		$this->storage->add($this->getAllContext(), $ids);
 		return $this;
+	}
+
+	public function hasSelection(string $cacheKey): bool {
+		// TODO: Implement hasSelection() method.
 	}
 
 	public function setMode(SelectionMode $mode): void {

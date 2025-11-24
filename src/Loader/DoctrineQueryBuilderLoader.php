@@ -146,4 +146,8 @@ final class DoctrineQueryBuilderLoader implements IdentityLoaderInterface
 
         return [$rootEntity, $rootAlias];
     }
+
+	public function getCacheKey(mixed $source): string {
+		// TODO: Implement getCacheKey() method.
+	}
 }

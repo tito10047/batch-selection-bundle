@@ -33,4 +33,8 @@ final class ArrayLoader implements IdentityLoaderInterface
 	public function getTotalCount(mixed $source): int {
 		return count($source);
 	}
+
+	public function getCacheKey(mixed $source): string {
+		// TODO: Implement getCacheKey() method.
+	}
 }

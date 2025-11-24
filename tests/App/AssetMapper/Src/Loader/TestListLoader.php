@@ -42,4 +42,8 @@ class TestListLoader implements IdentityLoaderInterface
 
         return count($source->all());
     }
+
+	public function getCacheKey(mixed $source): string {
+		// TODO: Implement getCacheKey() method.
+	}
 }
