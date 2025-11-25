@@ -21,12 +21,11 @@ final class SelectionManager implements SelectionManagerInterface {
 	) {
 	}
 
-	public function registerSource(string $context, mixed $source): SelectionInterface {
+	public function registerSource(string $context, mixed $source, int|\DateInterval|null $ttl = null): SelectionInterface {
 		$loader = $this->findLoader($source);
 
 		$selection = new Selection(
 			$context,
-			$this->ttl,
 			$this->identifierPath,
 			$this->storage,
 			$this->normalizer,
@@ -41,7 +40,8 @@ final class SelectionManager implements SelectionManagerInterface {
 		$cacheKey = $loader->getCacheKey($source);
 		if (!$selection->hasSource($cacheKey)) {
 			$selection->registerSource($cacheKey,
-				$loader->loadAllIdentifiers( $this->normalizer, $source, $this->identifierPath),
+				$loader->loadAllIdentifiers($this->normalizer, $source, $this->identifierPath),
+				$ttl?? $this->ttl
 			);
 		}
 
@@ -49,7 +49,7 @@ final class SelectionManager implements SelectionManagerInterface {
 	}
 
 	public function getSelection(string $context): SelectionInterface {
-		return new Selection($context, $this->ttl,$this->identifierPath, $this->storage, $this->normalizer, $this->metadataConverter);
+		return new Selection($context, $this->identifierPath, $this->storage, $this->normalizer, $this->metadataConverter);
 	}
 
 

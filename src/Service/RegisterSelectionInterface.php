@@ -4,7 +4,7 @@ namespace Tito10047\PersistentSelectionBundle\Service;
 
 interface RegisterSelectionInterface {
 
-	public function registerSource(string $cacheKey, mixed $source): static;
+	public function registerSource(string $cacheKey, mixed $source, int|\DateInterval|null $ttl = null): static;
 
 	public function hasSource(string $cacheKey): bool;
 }

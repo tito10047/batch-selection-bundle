@@ -11,7 +11,6 @@ final class Selection implements SelectionInterface, HasModeInterface, RegisterS
 
 	public function __construct(
 		private readonly string                        $key,
-		private readonly int|\DateInterval|null        $ttl = null,
 		private readonly ?string                       $identifierPath,
 
 		private readonly StorageInterface              $storage,
@@ -220,24 +219,57 @@ final class Selection implements SelectionInterface, HasModeInterface, RegisterS
 	}
 
 
-	public function hasSource(string $cacheKey): bool {
-		return $this->storage->hasIdentifier($this->getAllMetaContext(), $cacheKey);
-	}
-	public function registerSource(string $cacheKey, mixed $source): static {
-		// If source already registered, do nothing
-		if ($this->hasSource($cacheKey)) {
-			return $this;
-		}
+ public function hasSource(string $cacheKey): bool {
+        // First ensure we have a marker for this source
+        if (!$this->storage->hasIdentifier($this->getAllMetaContext(), $cacheKey)) {
+            return false;
+        }
 
-		// Expecting $source to be an array of scalar identifiers already normalized
-		$ids = is_array($source) ? array_values($source) : [];
-		if (!empty($ids)) {
-			$this->rememberAll($ids);
-		}
+        // Check TTL metadata if present
+        $meta = $this->storage->getMetadata($this->getAllMetaContext(), $cacheKey);
+        if (!is_array($meta) || $meta === []) {
+            return true; // no TTL -> considered present
+        }
 
-		// Mark the source as registered in ALL_META context
-		$this->storage->add($this->getAllMetaContext(), [$cacheKey], null);
+        if (isset($meta['expiresAt'])) {
+            $expiresAt = (int)$meta['expiresAt'];
+            if ($expiresAt !== 0 && time() >= $expiresAt) {
+                // expired
+                return false;
+            }
+        }
+        return true;
+    }
 
-		return $this;
-	}
+ public function registerSource(string $cacheKey, mixed $source, int|\DateInterval|null $ttl = null): static {
+        // If source already registered, do nothing
+        if ($this->hasSource($cacheKey)) {
+            return $this;
+        }
+
+        // Expecting $source to be an array of scalar identifiers already normalized
+        $ids = is_array($source) ? array_values($source) : [];
+        if (!empty($ids)) {
+            $this->rememberAll($ids);
+        }
+
+        // Mark the source as registered in ALL_META context, optionally with TTL metadata
+        $meta = null;
+        if ($ttl !== null) {
+            $expiresAt = 0; // 0 == never expire
+            if ($ttl instanceof \DateInterval) {
+                $expiresAt = (new \DateTimeImmutable('now'))
+                    ->add($ttl)
+                    ->getTimestamp();
+            } else {
+                // int seconds (can be zero or negative -> already expired)
+                $expiresAt = time() + (int)$ttl;
+            }
+            $meta = ['expiresAt' => $expiresAt];
+        }
+
+        $this->storage->add($this->getAllMetaContext(), [$cacheKey], $meta);
+
+        return $this;
+    }
 }

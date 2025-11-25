@@ -32,7 +32,7 @@ class SelectionInterfaceTest  extends TestCase{
 	}
 
 	public function testGetSelectedIdentifiersWithExcludeModeRemembersAll():void {
-		$selection = new Selection('test', null, null, $this->storage, $this->normalizer, $this->converter);
+		$selection = new Selection('test', null, $this->storage, $this->normalizer, $this->converter);
 		$selection->rememberAll([1, 2, 3]);
 		$selection->setMode(SelectionMode::EXCLUDE);
 
@@ -44,7 +44,7 @@ class SelectionInterfaceTest  extends TestCase{
 
 	public function testSelectAndIsSelected(): void
 	{
-		$selection = new Selection('ctx_select', null, null, $this->storage, $this->normalizer, $this->converter);
+		$selection = new Selection('ctx_select', null, $this->storage, $this->normalizer, $this->converter);
 
 		// selection methods should be fluent
 		$chain = $selection->select(5)->select(6);
@@ -57,7 +57,7 @@ class SelectionInterfaceTest  extends TestCase{
 
 	public function testUnselect(): void
 	{
-		$selection = new Selection('ctx_unselect', null,null, $this->storage, $this->normalizer, $this->converter);
+		$selection = new Selection('ctx_unselect', null, $this->storage, $this->normalizer, $this->converter);
 		$selection->select(10)->select(11);
 
 		$this->assertTrue($selection->isSelected(10));
@@ -72,7 +72,7 @@ class SelectionInterfaceTest  extends TestCase{
 
 	public function testSelectMultiple(): void
 	{
-		$selection = new Selection('ctx_multi', null,null, $this->storage, $this->normalizer, $this->converter);
+		$selection = new Selection('ctx_multi', null, $this->storage, $this->normalizer, $this->converter);
 		// intentionally pass mixed types, storage supports loose comparisons
 		$selection->selectMultiple([1, '2', 3]);
 
@@ -82,7 +82,7 @@ class SelectionInterfaceTest  extends TestCase{
 
 	public function testClearSelected(): void
 	{
-		$selection = new Selection('ctx_clear',null, null, $this->storage, $this->normalizer, $this->converter);
+		$selection = new Selection('ctx_clear', null, $this->storage, $this->normalizer, $this->converter);
 		$selection->select(1)->select(2);
 		$this->assertSame([1, 2], $selection->getSelectedIdentifiers());
 
@@ -94,7 +94,7 @@ class SelectionInterfaceTest  extends TestCase{
 
 	public function testDestroyClearsAllContexts(): void
 	{
-		$selection = new Selection('ctx_destroy',null, null, $this->storage, $this->normalizer, $this->converter);
+		$selection = new Selection('ctx_destroy', null, $this->storage, $this->normalizer, $this->converter);
 		// Setup some state in both primary and __ALL__ contexts (using helper methods only for setup)
 		$selection->rememberAll([100, 200, 300]);
 		$selection->select(200)->select(400);
@@ -112,7 +112,7 @@ class SelectionInterfaceTest  extends TestCase{
 
  public function testGetSelectedIdentifiersInIncludeMode(): void
  {
-     $selection = new Selection('ctx_ids', null, null, $this->storage, $this->normalizer, $this->converter);
+     $selection = new Selection('ctx_ids', null, $this->storage, $this->normalizer, $this->converter);
      $selection->select(1)->select(2)->select(2); // duplicate should be deduped by storage
 
      /** @var SelectionInterface $selection */
@@ -121,7 +121,7 @@ class SelectionInterfaceTest  extends TestCase{
 
  public function testSelectWithArrayMetadataAndRetrieve(): void
  {
-     $selection = new Selection('ctx_meta_array', null, null, $this->storage, $this->normalizer, $this->converter);
+     $selection = new Selection('ctx_meta_array', null, $this->storage, $this->normalizer, $this->converter);
      $meta = ['foo' => 'bar', 'n' => 42];
      $selection->select(7, $meta);
 
@@ -134,7 +134,7 @@ class SelectionInterfaceTest  extends TestCase{
 
  public function testSelectWithObjectMetadataAndHydration(): void
  {
-     $selection = new Selection('ctx_meta_object', null,null, $this->storage, $this->normalizer, $this->converter);
+     $selection = new Selection('ctx_meta_object', null, $this->storage, $this->normalizer, $this->converter);
      $obj = new stdClass();
      $obj->foo = 'baz';
      $obj->num = 13;
@@ -155,7 +155,7 @@ class SelectionInterfaceTest  extends TestCase{
 
  public function testSelectMultipleWithPerIdMetadata(): void
  {
-     $selection = new Selection('ctx_meta_multi', null,null, $this->storage, $this->normalizer, $this->converter);
+     $selection = new Selection('ctx_meta_multi', null, $this->storage, $this->normalizer, $this->converter);
      $items = [1, 2, 3];
      $metadataMap = [
          1 => ['x' => 1],
@@ -175,7 +175,7 @@ class SelectionInterfaceTest  extends TestCase{
 
  public function testUpdateMetadataOverwrites(): void
  {
-     $selection = new Selection('ctx_update', null, null, $this->storage, $this->normalizer, $this->converter);
+     $selection = new Selection('ctx_update', null, $this->storage, $this->normalizer, $this->converter);
      $selection->select(55, ['a' => 1]);
 
      $selection->update(55, ['a' => 2, 'b' => 3]);
@@ -183,17 +183,46 @@ class SelectionInterfaceTest  extends TestCase{
  }
 
 
-	public function testHasSelectionWithCacheKeyAndTtl(): void
-	{
-		$selection = new Selection('ctx_meta', 10, null, $this->storage, $this->normalizer, $this->converter);
+ public function testHasSelectionWithCacheKeyAndTtl(): void
+ {
+     $selection = new Selection('ctx_meta', null, $this->storage, $this->normalizer, $this->converter);
 
-		// Initially no selection cached
-		$this->assertFalse($selection->hasSource('abc'));
+     // Initially no selection cached
+     $this->assertFalse($selection->hasSource('abc'));
 
-		// Set with cache key and ttl 1 second
-		$selection->registerSource("abc", [10, 20]);
-		$this->assertTrue($selection->hasSource('abc'));
-		$this->assertFalse($selection->hasSource('other'));
+     // Set with cache key without ttl
+     $selection->registerSource("abc", [10, 20]);
+     $this->assertTrue($selection->hasSource('abc'));
+     $this->assertFalse($selection->hasSource('other'));
 
-	}
+ }
+
+ public function testHasSourceExpiresWithIntTtl(): void
+ {
+     $selection = new Selection('ctx_meta_ttl_int', null, $this->storage, $this->normalizer, $this->converter);
+
+     $this->assertFalse($selection->hasSource('src1'));
+
+     // ttl 1 second
+     $selection->registerSource('src1', [1, 2, 3], 1);
+     $this->assertTrue($selection->hasSource('src1'));
+
+     // wait for expiry
+     sleep(2);
+     $this->assertFalse($selection->hasSource('src1'));
+ }
+
+ public function testHasSourceExpiresWithDateIntervalTtl(): void
+ {
+     $selection = new Selection('ctx_meta_ttl_interval', null, $this->storage, $this->normalizer, $this->converter);
+
+     $this->assertFalse($selection->hasSource('src2'));
+
+     $interval = new \DateInterval('PT1S');
+     $selection->registerSource('src2', [4, 5], $interval);
+     $this->assertTrue($selection->hasSource('src2'));
+
+     sleep(2);
+     $this->assertFalse($selection->hasSource('src2'));
+ }
 }
