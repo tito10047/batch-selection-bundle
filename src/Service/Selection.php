@@ -1,17 +1,18 @@
 <?php
 
-namespace Tito10047\BatchSelectionBundle\Service;
+namespace Tito10047\PersistentSelectionBundle\Service;
 
-use Tito10047\BatchSelectionBundle\Converter\MetadataConverterInterface;
-use Tito10047\BatchSelectionBundle\Enum\SelectionMode;
-use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
-use Tito10047\BatchSelectionBundle\Storage\StorageInterface;
+use Tito10047\PersistentSelectionBundle\Converter\MetadataConverterInterface;
+use Tito10047\PersistentSelectionBundle\Enum\SelectionMode;
+use Tito10047\PersistentSelectionBundle\Normalizer\IdentifierNormalizerInterface;
+use Tito10047\PersistentSelectionBundle\Storage\StorageInterface;
 
-final class Selection implements SelectionInterface, RememberAllInterface, HasModeInterface {
+final class Selection implements SelectionInterface, HasModeInterface, RegisterSelectionInterface {
 
 	public function __construct(
 		private readonly string                        $key,
 		private readonly ?string                       $identifierPath,
+
 		private readonly StorageInterface              $storage,
 		private readonly IdentifierNormalizerInterface $normalizer,
 		private readonly MetadataConverterInterface    $metadataConverter,
@@ -194,9 +195,14 @@ final class Selection implements SelectionInterface, RememberAllInterface, HasMo
 		return $this->key . '__ALL__';
 	}
 
+	private function getAllMetaContext(): string {
+		return $this->key . '__ALL_META__';
+	}
+
 	public function destroy(): static {
 		$this->storage->clear($this->key);
 		$this->storage->clear($this->getAllContext());
+		$this->storage->clear($this->getAllMetaContext());
 		return $this;
 	}
 
@@ -212,4 +218,58 @@ final class Selection implements SelectionInterface, RememberAllInterface, HasMo
 		return $this->normalizer->normalize($item, $this->identifierPath);
 	}
 
+
+ public function hasSource(string $cacheKey): bool {
+        // First ensure we have a marker for this source
+        if (!$this->storage->hasIdentifier($this->getAllMetaContext(), $cacheKey)) {
+            return false;
+        }
+
+        // Check TTL metadata if present
+        $meta = $this->storage->getMetadata($this->getAllMetaContext(), $cacheKey);
+        if (!is_array($meta) || $meta === []) {
+            return true; // no TTL -> considered present
+        }
+
+        if (isset($meta['expiresAt'])) {
+            $expiresAt = (int)$meta['expiresAt'];
+            if ($expiresAt !== 0 && time() >= $expiresAt) {
+                // expired
+                return false;
+            }
+        }
+        return true;
+    }
+
+ public function registerSource(string $cacheKey, mixed $source, int|\DateInterval|null $ttl = null): static {
+        // If source already registered, do nothing
+        if ($this->hasSource($cacheKey)) {
+            return $this;
+        }
+
+        // Expecting $source to be an array of scalar identifiers already normalized
+        $ids = is_array($source) ? array_values($source) : [];
+        if (!empty($ids)) {
+            $this->rememberAll($ids);
+        }
+
+        // Mark the source as registered in ALL_META context, optionally with TTL metadata
+        $meta = null;
+        if ($ttl !== null) {
+            $expiresAt = 0; // 0 == never expire
+            if ($ttl instanceof \DateInterval) {
+                $expiresAt = (new \DateTimeImmutable('now'))
+                    ->add($ttl)
+                    ->getTimestamp();
+            } else {
+                // int seconds (can be zero or negative -> already expired)
+                $expiresAt = time() + (int)$ttl;
+            }
+            $meta = ['expiresAt' => $expiresAt];
+        }
+
+        $this->storage->add($this->getAllMetaContext(), [$cacheKey], $meta);
+
+        return $this;
+    }
 }

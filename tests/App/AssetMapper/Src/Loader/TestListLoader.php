@@ -1,10 +1,10 @@
 <?php
 
-namespace Tito10047\BatchSelectionBundle\Tests\App\AssetMapper\Src\Loader;
+namespace Tito10047\PersistentSelectionBundle\Tests\App\AssetMapper\Src\Loader;
 
-use Tito10047\BatchSelectionBundle\Loader\IdentityLoaderInterface;
-use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
-use Tito10047\BatchSelectionBundle\Tests\App\AssetMapper\Src\Support\TestList;
+use Tito10047\PersistentSelectionBundle\Loader\IdentityLoaderInterface;
+use Tito10047\PersistentSelectionBundle\Normalizer\IdentifierNormalizerInterface;
+use Tito10047\PersistentSelectionBundle\Tests\App\AssetMapper\Src\Support\TestList;
 
 /**
  * Jednoduchý testovací loader pre TestList wrapper.
@@ -42,4 +42,12 @@ class TestListLoader implements IdentityLoaderInterface
 
         return count($source->all());
     }
+
+	public function getCacheKey(mixed $source): string {
+		if (!$this->supports($source)) {
+			throw new \InvalidArgumentException('Source musí byť inštancia TestList.');
+		}
+		// Deterministický kľúč zo zoznamu položiek
+		return 'test_list:' . md5(serialize($source->all()));
+	}
 }

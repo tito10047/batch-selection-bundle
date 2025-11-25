@@ -1,19 +1,18 @@
 <?php
 
-namespace Tito10047\BatchSelectionBundle\Tests\Unit\Service;
+namespace Tito10047\PersistentSelectionBundle\Tests\Unit\Service;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Tito10047\BatchSelectionBundle\Enum\SelectionMode;
-use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
-use Tito10047\BatchSelectionBundle\Normalizer\ScalarNormalizer;
-use Tito10047\BatchSelectionBundle\Service\Selection;
-use Tito10047\BatchSelectionBundle\Service\SelectionInterface;
-use Tito10047\BatchSelectionBundle\Storage\SessionStorage;
-use Tito10047\BatchSelectionBundle\Tests\Trait\SessionInterfaceTrait;
-use Tito10047\BatchSelectionBundle\Converter\ObjectVarsConverter;
+use Tito10047\PersistentSelectionBundle\Enum\SelectionMode;
+use Tito10047\PersistentSelectionBundle\Normalizer\IdentifierNormalizerInterface;
+use Tito10047\PersistentSelectionBundle\Normalizer\ScalarNormalizer;
+use Tito10047\PersistentSelectionBundle\Service\Selection;
+use Tito10047\PersistentSelectionBundle\Service\SelectionInterface;
+use Tito10047\PersistentSelectionBundle\Storage\SessionStorage;
+use Tito10047\PersistentSelectionBundle\Tests\Trait\SessionInterfaceTrait;
+use Tito10047\PersistentSelectionBundle\Converter\ObjectVarsConverter;
 use stdClass;
-
 class SelectionInterfaceTest  extends TestCase{
 
 	use SessionInterfaceTrait;
@@ -181,5 +180,49 @@ class SelectionInterfaceTest  extends TestCase{
 
      $selection->update(55, ['a' => 2, 'b' => 3]);
      $this->assertSame(['a' => 2, 'b' => 3], $selection->getMetadata(55));
+ }
+
+
+ public function testHasSelectionWithCacheKeyAndTtl(): void
+ {
+     $selection = new Selection('ctx_meta', null, $this->storage, $this->normalizer, $this->converter);
+
+     // Initially no selection cached
+     $this->assertFalse($selection->hasSource('abc'));
+
+     // Set with cache key without ttl
+     $selection->registerSource("abc", [10, 20]);
+     $this->assertTrue($selection->hasSource('abc'));
+     $this->assertFalse($selection->hasSource('other'));
+
+ }
+
+ public function testHasSourceExpiresWithIntTtl(): void
+ {
+     $selection = new Selection('ctx_meta_ttl_int', null, $this->storage, $this->normalizer, $this->converter);
+
+     $this->assertFalse($selection->hasSource('src1'));
+
+     // ttl 1 second
+     $selection->registerSource('src1', [1, 2, 3], 1);
+     $this->assertTrue($selection->hasSource('src1'));
+
+     // wait for expiry
+     sleep(2);
+     $this->assertFalse($selection->hasSource('src1'));
+ }
+
+ public function testHasSourceExpiresWithDateIntervalTtl(): void
+ {
+     $selection = new Selection('ctx_meta_ttl_interval', null, $this->storage, $this->normalizer, $this->converter);
+
+     $this->assertFalse($selection->hasSource('src2'));
+
+     $interval = new \DateInterval('PT1S');
+     $selection->registerSource('src2', [4, 5], $interval);
+     $this->assertTrue($selection->hasSource('src2'));
+
+     sleep(2);
+     $this->assertFalse($selection->hasSource('src2'));
  }
 }

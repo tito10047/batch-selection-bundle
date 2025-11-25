@@ -1,12 +1,12 @@
 <?php
 
-namespace Tito10047\BatchSelectionBundle\Service;
+namespace Tito10047\PersistentSelectionBundle\Service;
 
-use Tito10047\BatchSelectionBundle\Exception\NormalizationFailedException;
-use Tito10047\BatchSelectionBundle\Converter\MetadataConverterInterface;
-use Tito10047\BatchSelectionBundle\Loader\IdentityLoaderInterface;
-use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
-use Tito10047\BatchSelectionBundle\Storage\StorageInterface;
+use Tito10047\PersistentSelectionBundle\Converter\MetadataConverterInterface;
+use Tito10047\PersistentSelectionBundle\Exception\NormalizationFailedException;
+use Tito10047\PersistentSelectionBundle\Loader\IdentityLoaderInterface;
+use Tito10047\PersistentSelectionBundle\Normalizer\IdentifierNormalizerInterface;
+use Tito10047\PersistentSelectionBundle\Storage\StorageInterface;
 
 final class SelectionManager implements SelectionManagerInterface {
 
@@ -17,20 +17,33 @@ final class SelectionManager implements SelectionManagerInterface {
 		private readonly MetadataConverterInterface    $metadataConverter,
 		/** @var IdentityLoaderInterface[] */
 		private readonly iterable                      $loaders,
+		private readonly int|\DateInterval|null        $ttl = null,
 	) {
 	}
 
-	public function registerSource(string $context, mixed $source, ?IdentifierNormalizerInterface $normalizer = null): SelectionInterface {
+	public function registerSource(string $context, mixed $source, int|\DateInterval|null $ttl = null): SelectionInterface {
 		$loader = $this->findLoader($source);
 
-		$selection = new Selection($context, $this->identifierPath, $this->storage, $this->normalizer, $this->metadataConverter);
+		$selection = new Selection(
+			$context,
+			$this->identifierPath,
+			$this->storage,
+			$this->normalizer,
+			$this->metadataConverter
+		);
 
 		foreach ($source as $item) {
 			if (!$this->normalizer->supports($item)) {
 				throw new NormalizationFailedException('Item is not an object.');
 			}
 		}
-		$selection->rememberAll($loader->loadAllIdentifiers($normalizer??$this->normalizer, $source, $this->identifierPath));
+		$cacheKey = $loader->getCacheKey($source);
+		if (!$selection->hasSource($cacheKey)) {
+			$selection->registerSource($cacheKey,
+				$loader->loadAllIdentifiers($this->normalizer, $source, $this->identifierPath),
+				$ttl?? $this->ttl
+			);
+		}
 
 		return $selection;
 	}

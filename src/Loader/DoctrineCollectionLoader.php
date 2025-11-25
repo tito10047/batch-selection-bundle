@@ -1,10 +1,10 @@
 <?php
 
-namespace Tito10047\BatchSelectionBundle\Loader;
+namespace Tito10047\PersistentSelectionBundle\Loader;
 
 use Doctrine\Common\Collections\Collection;
 use InvalidArgumentException;
-use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
+use Tito10047\PersistentSelectionBundle\Normalizer\IdentifierNormalizerInterface;
 
 /**
  * Loader responsible for extracting identifiers from Doctrine Collection objects.
@@ -53,5 +53,50 @@ final class DoctrineCollectionLoader implements IdentityLoaderInterface
 		}
 
 		return $identifiers;
+	}
+
+	public function getCacheKey(mixed $source): string {
+		if (!$this->supports($source)) {
+			throw new InvalidArgumentException('Source must be a Doctrine Collection.');
+		}
+
+		/** @var Collection $source */
+		$items = $source->toArray();
+
+		$normalized = array_map(function ($item) {
+			return self::normalizeValue($item);
+		}, $items);
+
+		return 'doctrine_collection:' . md5(serialize($normalized));
+	}
+
+	/**
+	 * Produce a deterministic scalar/array representation for hashing.
+	 */
+	private static function normalizeValue(mixed $value): mixed
+	{
+		if (is_scalar($value) || $value === null) {
+			return $value;
+		}
+		if ($value instanceof \DateTimeInterface) {
+			return ['__dt__' => true, 'v' => $value->format(DATE_ATOM)];
+		}
+		if (is_array($value)) {
+			$normalized = [];
+			foreach ($value as $k => $v) {
+				$normalized[$k] = self::normalizeValue($v);
+			}
+			if (!array_is_list($normalized)) {
+				ksort($normalized);
+			}
+			return $normalized;
+		}
+		if (is_object($value)) {
+			$vars = get_object_vars($value);
+			ksort($vars);
+			return ['__class__' => get_class($value), 'props' => self::normalizeValue($vars)];
+		}
+		// Fallback – stringify
+		return (string)$value;
 	}
 }

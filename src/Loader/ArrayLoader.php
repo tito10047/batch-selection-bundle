@@ -1,10 +1,10 @@
 <?php
 
-namespace Tito10047\BatchSelectionBundle\Loader;
+namespace Tito10047\PersistentSelectionBundle\Loader;
 
 
 use InvalidArgumentException;
-use Tito10047\BatchSelectionBundle\Normalizer\IdentifierNormalizerInterface;
+use Tito10047\PersistentSelectionBundle\Normalizer\IdentifierNormalizerInterface;
 
 final class ArrayLoader implements IdentityLoaderInterface
 {
@@ -30,7 +30,16 @@ final class ArrayLoader implements IdentityLoaderInterface
 	}
 
 
-	public function getTotalCount(mixed $source): int {
-		return count($source);
-	}
+    public function getTotalCount(mixed $source): int {
+        return count($source);
+    }
+
+    public function getCacheKey(mixed $source): string {
+        if (!is_array($source)) {
+            throw new InvalidArgumentException('Source must be an array.');
+        }
+        // Use a deterministic hash of the full source structure. serialize() preserves
+        // structure and values for arrays/objects commonly used in tests.
+        return 'array:' . md5(serialize($source));
+    }
 }
