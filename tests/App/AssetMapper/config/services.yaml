@@ -21,7 +21,7 @@ services:
 
     Tito10047\PersistentSelectionBundle\Tests\App\AssetMapper\Src\ServiceHelper:
         arguments:
-            $normalizers: !tagged persistent_selection.identifier_normalizer
-            $loaders: !tagged persistent_selection.identity_loader
+            $normalizers: !tagged_iterator persistent_selection.identifier_normalizer
+            $loaders: !tagged_iterator persistent_selection.identity_loader
         public: true
 
