@@ -68,10 +68,8 @@ final class DoctrineQueryLoader implements IdentityLoaderInterface {
 		$rows   = $idQuery->getScalarResult();
 		$values = array_map('current', $rows);
 
-		// Zabezpeč stabilný typ identifikátora podľa Doctrine metadata
-		$fieldType = $metadata->getTypeOfField($identifierField);
-		return array_map(function ($v) use ($fieldType) {
-			return self::castByDoctrineType($v, $fieldType);
+		return array_map(function ($v)  {
+			return self::normalizeValue($v);
 		}, $values);
 	}
 
@@ -183,43 +181,11 @@ final class DoctrineQueryLoader implements IdentityLoaderInterface {
 	/**
 	 * Normalize values for a deterministic cache key.
 	 */
-	private static function normalizeValue(mixed $value): mixed {
+	private static function normalizeValue(mixed $value): int|string {
 		if (is_scalar($value) || $value === null) {
 			return $value;
 		}
-		if ($value instanceof \DateTimeInterface) {
-			return ['__dt__' => true, 'v' => $value->format(DATE_ATOM)];
-		}
-		if (is_array($value)) {
-			$normalized = [];
-			foreach ($value as $k => $v) {
-				$normalized[$k] = self::normalizeValue($v);
-			}
-			if (!array_is_list($normalized)) {
-				ksort($normalized);
-			}
-			return $normalized;
-		}
-		if (is_object($value)) {
-			// try to reduce to public props for stability
-			$vars = get_object_vars($value);
-			ksort($vars);
-			return ['__class__' => get_class($value), 'props' => self::normalizeValue($vars)];
-		}
-		return (string) $value;
+		throw new RuntimeException(gettype($value).' is not supported as identifier value.');
 	}
 
-	/**
-	 * Cast hodnoty podľa Doctrine typu poľa, aby sa napr. integer ID vracali ako int a nie string.
-	 */
-	private static function castByDoctrineType(mixed $value, ?string $doctrineType): int|string {
-		// najčastejšie typy id
-		$intTypes = ['integer', 'smallint', 'bigint'];
-		if ($doctrineType !== null && in_array($doctrineType, $intTypes, true)) {
-			// bigint môže byť mimo rozsahu int, ale v našom projekte ID sú bežné int
-			// ak by bolo treba zachovať bigint ako string, stačilo by to tu vetviť
-			return (int) $value;
-		}
-		return is_int($value) || is_string($value) ? $value : (string) $value;
-	}
 }
